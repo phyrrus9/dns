@@ -33,13 +33,15 @@ int handleRequest(struct dnsServer *srv, int len)
 	uint16_t size;
 	ptr = readDNSHeader(&head, ptr);
 	ptr = readDNSQuestion(&question, ptr);
-	if (question.qtype != 1) //handle only A requests
+	if (question.qtype != 1 || question.qclass != 1) //handle only A requests (with IN class)
 	{
-		fprintf(stderr, "QUESTION TYPE 0x%x\n", question.qtype);
 		return -1; //call passthrough
 	}
 	else if ((addr = resolveHost(question.qname)) == NULL) //call passthrough
-		return die("COULD NOT RESOLVE", -1);
+	{
+//		fprintf(stderr, "RESOLVE: %s\n", question.qname);
+//		return die("\tCOULD NOT RESOLVE", -1);
+	}
 	else
 	{
 		printf("Received packet from %s:%d\n",

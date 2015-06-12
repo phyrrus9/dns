@@ -21,7 +21,8 @@ enum DNSHeaderField {
 		FIELD_ID		=	0x01,
 		FIELD_QUESTIONS		=	0x02,
 		FIELD_ANSWERS		=	0x04,
-		FIELD_ADDITIONAL	=	0x08};
+		FIELD_NS		=	0x08,
+		FIELD_ADDITIONAL	=	0x10};
 struct DNSHeader
 {
 	uint16_t id;
@@ -37,6 +38,7 @@ struct DNSHeader
 	uint8_t ra		:1; //recursion available
 	uint16_t qc; //question count
 	uint16_t ac; //answer count
+	uint16_t nc; //NS count
 	uint16_t dc; //additional count, should always use 0
 };
 struct DNSQuestion

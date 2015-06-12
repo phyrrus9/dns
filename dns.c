@@ -30,10 +30,11 @@ uint16_t getDNSHeaderField(struct DNSHeader *head, enum DNSHeaderField field)
 {
 	switch (field)
 	{
-		case FIELD_ID:		return ntohs(head->id);
-		case FIELD_QUESTIONS:	return ntohs(head->qc);
-		case FIELD_ANSWERS:	return ntohs(head->ac);
-		case FIELD_ADDITIONAL:	return ntohs(head->dc);
+		case FIELD_ID:		return htons(head->id);
+		case FIELD_QUESTIONS:	return htons(head->qc);
+		case FIELD_ANSWERS:	return htons(head->ac);
+		case FIELD_NS:		return htons(head->nc);
+		case FIELD_ADDITIONAL:	return htons(head->dc);
 		default:		return 0xFFFF; //unknown field
 	}
 }
@@ -132,10 +133,12 @@ int8_t *readDNSQuestion(struct DNSQuestion *question, int8_t *ptr)
 	question->original_size = ptr - orig_ptr;
 	memcpy(&question->original, orig_ptr, question->original_size);
 	//get type and class
-	memcpy(&question->qclass, int8ptr_postinc(&ptr, sizeof(uint16_t)),
-		sizeof(uint16_t)); //read the class
 	memcpy(&question->qtype, int8ptr_postinc(&ptr, sizeof(uint16_t)),
 		sizeof(uint16_t)); //read the type
+	memcpy(&question->qclass, int8ptr_postinc(&ptr, sizeof(uint16_t)),
+		sizeof(uint16_t)); //read the class
+	question->qtype = htons(question->qtype);
+	question->qclass = htons(question->qclass);
 	return ptr; //return pointer to end of question
 }
 
