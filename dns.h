@@ -58,6 +58,7 @@ int setDNSHeaderOption(struct DNSHeader *head, enum DNSHeaderOption opt, uint8_t
 uint8_t getDNSHeaderOption(struct DNSHeader *head, enum DNSHeaderOption opt);
 void initDNSHeader(struct DNSHeader *head);
 int8_t *int8ptr_postinc(int8_t **ptr, uint32_t increment);
+int8_t *readDNSHeader(struct DNSHeader *head, int8_t *ptr);
 int8_t *readDNSQuestion(struct DNSQuestion *question, int8_t *ptr);
 struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr);
 void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, struct DNSAnswer *answer,

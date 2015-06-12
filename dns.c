@@ -80,6 +80,14 @@ int8_t *int8ptr_postinc(int8_t **ptr, uint32_t increment)
 	return ret;
 }
 
+int8_t *readDNSHeader(struct DNSHeader *head, int8_t *ptr)
+{
+	initDNSHeader(head);
+	memcpy((void *)head, int8ptr_postinc(&ptr, sizeof(struct DNSHeader)),
+	       sizeof(struct DNSHeader));
+	return ptr;
+}
+
 int8_t *readDNSQuestion(struct DNSQuestion *question, int8_t *ptr)
 {
 	//first get the name
