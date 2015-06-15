@@ -195,6 +195,8 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 		{ 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x58, 0x00, 0x04 };
 	uint16_t qname_size;
 	uint8_t *qname;
+	uint16_t id_tmp = getDNSHeaderField(head, FIELD_ID);
+	printf("\t[RESPOND] ID: %04x\n", id_tmp);
 	initDNSHeader(&resphead);
 	setDNSHeaderOption(&resphead, OPT_QR, 1);
 	setDNSHeaderOption(&resphead, OPT_AUTHORITIVE_ANSWER, 1);
@@ -202,8 +204,8 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	setDNSHeaderOption(&resphead, OPT_RECURSION_AVAILABLE, 1);
 	setDNSHeaderOption(&resphead, OPT_REQUEST_RECURSION,
 			   getDNSHeaderOption(head, OPT_REQUEST_RECURSION));
-	setDNSHeaderField(&resphead, FIELD_ID,
-			  getDNSHeaderField(head, FIELD_ID)); //mimic the ID
+	setDNSHeaderField(&resphead, FIELD_ID, id_tmp);
+			 // getDNSHeaderField(head, FIELD_ID)); //mimic the ID
 	setDNSHeaderField(&resphead, FIELD_QUESTIONS, 1); //reply with the question
 			  //getDNSHeaderField(head, FIELD_QUESTIONS)); //mimic the Qcount
 	setDNSHeaderField(&resphead, FIELD_ANSWERS, 1);
@@ -224,6 +226,7 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	memcpy(int8ptr_postinc((int8_t **)&curr, ANSWER_LEN), answerbytes, ANSWER_LEN); //copy answer header
 	memcpy(int8ptr_postinc((int8_t **)&curr, 0x04), &answer->addr, 0x04); //copy addr
 	*size = curr - ptr; //set the size
+	printf("\t[RESPOND] ID_SENT: %04x\n", resphead.id);
 }
 
 char *resolveHost(char *hostname)
