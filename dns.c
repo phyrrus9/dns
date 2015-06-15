@@ -189,15 +189,16 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	struct DNSHeader resphead;
 	char *ptr = (char *)*buf, *curr = ptr;
 	char answerbytes[0x0A] =
-		{ 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x58, 0x00, 0x04 };
+		{ 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x02, 0x58, 0x00, 0x04 };
 	uint16_t qname_size;
 	uint8_t *qname;
 	initDNSHeader(&resphead);
+	setDNSHeaderOption(&resphead, OPT_QR, 1);
 	setDNSHeaderField(&resphead, FIELD_ID,
 			  getDNSHeaderField(head, FIELD_ID)); //mimic the ID
 	setDNSHeaderField(&resphead, FIELD_QUESTIONS,
 			  getDNSHeaderField(head, FIELD_QUESTIONS)); //mimic the Qcount
-	setDNSHeaderField(&resphead, FIELD_ANSWERS, answer->rcode == 0 ? 0 : 1);
+	setDNSHeaderField(&resphead, FIELD_ANSWERS, 1);
 	setDNSHeaderField(&resphead, FIELD_ADDITIONAL, 0); //never have any additional sections
 	memcpy(int8ptr_postinc((int8_t **)&curr, sizeof(struct DNSHeader)),
 	       &resphead, sizeof(struct DNSHeader)); //copy the header in
