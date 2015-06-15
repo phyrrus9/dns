@@ -160,6 +160,26 @@ struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr)
 	return ret;
 }
 
+uint8_t *createNAME(int8_t *host, uint16_t *size)
+{
+	uint8_t *buf = malloc(255), *ptr = buf, *ret;
+	int8_t *pch = strtok(host, ".");
+	while (pch != NULL)
+	{
+		uint8_t len = strlen(pch);
+		*ptr++ = len;
+		memcpy(ptr, pch, len);
+		ptr += len;
+		pch = strtok(NULL, ".");
+	}
+	*ptr = 0;
+	*size = ptr - buf;
+	ret = malloc(*size);
+	memcpy(ret, buf, *size);
+	free(buf);
+	return ret;
+}
+
 void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, struct DNSAnswer *answer,
 			void **buf, uint16_t *size)
 {
@@ -168,8 +188,10 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 		*buf = malloc(0xFF); //allocate it
 	struct DNSHeader resphead;
 	char *ptr = (char *)*buf, *curr = ptr;
-	char answerbytes[0x0C] =
-		{0xC0, 0x0C, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x58, 0x00, 0x04};
+	char answerbytes[0x0A] =
+		{ 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x58, 0x00, 0x04 };
+	uint16_t qname_size;
+	uint8_t *qname;
 	initDNSHeader(&resphead);
 	setDNSHeaderField(&resphead, FIELD_ID,
 			  getDNSHeaderField(head, FIELD_ID)); //mimic the ID
@@ -179,9 +201,10 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	setDNSHeaderField(&resphead, FIELD_ADDITIONAL, 0); //never have any additional sections
 	memcpy(int8ptr_postinc((int8_t **)&curr, sizeof(struct DNSHeader)),
 	       &resphead, sizeof(struct DNSHeader)); //copy the header in
-	memcpy(int8ptr_postinc((int8_t **)&curr, question->original_size),
-	       question->original, question->original_size); //copy original in
-	memcpy(int8ptr_postinc((int8_t **)&curr, 0x0C), answerbytes, 0x0C); //copy answer header
+	qname = createNAME(question->qname, &qname_size);
+	memcpy(int8ptr_postinc((int8_t **)&curr, qname_size), qname, qname_size); //copy the name
+	free(qname);
+	memcpy(int8ptr_postinc((int8_t **)&curr, 0x0A), answerbytes, 0x0A); //copy answer header
 	memcpy(int8ptr_postinc((int8_t **)&curr, 0x04), &answer->addr, 0x04); //copy addr
 	*size = curr - ptr; //set the size
 }

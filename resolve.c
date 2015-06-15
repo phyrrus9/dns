@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 #include "resolve.h"
 
 struct Arecord *Arecord_read(FILE *fp)
@@ -39,6 +40,35 @@ void Arecord_write(FILE *fp, char *hostname, char *addr)
 		(int *)&ondisk.addr[3]);
 	fwrite(&ondisk, sizeof(struct diskArecord), 1, fp);
 	fwrite(hostname, ondisk.hostname, 1, fp);
+}
+
+void Arecord_remove(FILE *fp, char *hostname)
+{
+	char *tmpfname = tempnam(NULL, "A_DB_");
+	FILE *tmpf = fopen(tmpfname, "wb");
+	char buf[256];
+	struct diskArecord rec;
+	long int oldpos = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+	while (fread(&rec, sizeof(struct diskArecord), 1, fp))
+	{
+		fread(buf, rec.hostname, 1, fp);
+		buf[rec.hostname] = 0; //null terminate it
+		if (strcmp(buf, hostname))
+		{
+			fwrite(&rec, sizeof(struct diskArecord), 1, tmpf);
+			fwrite(buf, rec.hostname, 1, tmpf);
+		}
+	}
+	fflush(tmpf);
+	freopen(NULL, "rb", tmpf);
+	freopen(NULL, "wb", fp);
+	while (fread(buf, 1, 1, tmpf)) fwrite(buf, 1, 1, fp);
+	fflush(fp);
+	fclose(tmpf);
+	unlink(tmpfname);
+	freopen(NULL, "rb", fp);
+	fseek(fp, oldpos, SEEK_SET);
 }
 
 struct Arecord *resolve(char *hostname)

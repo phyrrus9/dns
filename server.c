@@ -33,6 +33,8 @@ int handleRequest(struct dnsServer *srv, int len)
 	uint16_t size;
 	ptr = readDNSHeader(&head, ptr);
 	ptr = readDNSQuestion(&question, ptr);
+	printf("Received packet from %s:%d\n",
+		inet_ntoa(srv->client.sin_addr), ntohs(srv->client.sin_port));
 	if (question.qtype != 1 || question.qclass != 1) //handle only A requests (with IN class)
 	{
 		return -1; //call passthrough
@@ -44,8 +46,6 @@ int handleRequest(struct dnsServer *srv, int len)
 	}
 	else
 	{
-		printf("Received packet from %s:%d\n",
-			inet_ntoa(srv->client.sin_addr), ntohs(srv->client.sin_port));
 		printf("NAME TO RESOLVE: %s\t%s\n", question.qname, addr);
 		answer = createDNSAnswer(&question, addr);
 		createDNSResponse(&head, &question, &answer, (void **)&buf, &size);

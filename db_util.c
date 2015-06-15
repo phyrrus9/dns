@@ -35,6 +35,13 @@ int main(int argc, char ** argv)
 		}
 		fclose(fp);
 	}
+	else if (!strcmp(argv[1], "remove"))
+	{
+		FILE *fp = fopen("A.txt", "rb");
+		for (i = 2; i < argc; i++)
+			Arecord_remove(fp, argv[i]);
+		fclose(fp);
+	}
 	else if (!strcmp(argv[1], "resolve"))
 	{
 		struct Arecord *rec;

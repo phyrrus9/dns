@@ -16,6 +16,7 @@ struct Arecord
 struct Arecord *Arecord_read(FILE *fp);
 void Arecord_free(struct Arecord *record);
 void Arecord_write(FILE *fp, char *hostname, char *addr);
+void Arecord_remove(FILE *fp, char *hostname);
 struct Arecord *resolve(char *hostname);
 
 #endif
