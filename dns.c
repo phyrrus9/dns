@@ -188,16 +188,17 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 		*buf = malloc(0xFF); //allocate it
 	struct DNSHeader resphead;
 	char *ptr = (char *)*buf, *curr = ptr;
-	char answerbytes[0x0A] =
-		{ 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x02, 0x58, 0x00, 0x04 };
+#define ANSWER_LEN 0x09
+	char answerbytes[ANSWER_LEN] =
+		{ 0x00, 0x00, 0x01, 0x00, 0x01, 0xC0, 0x0C, 0x00, 0x04 };
 	uint16_t qname_size;
 	uint8_t *qname;
 	initDNSHeader(&resphead);
 	setDNSHeaderOption(&resphead, OPT_QR, 1);
 	setDNSHeaderField(&resphead, FIELD_ID,
 			  getDNSHeaderField(head, FIELD_ID)); //mimic the ID
-	setDNSHeaderField(&resphead, FIELD_QUESTIONS,
-			  getDNSHeaderField(head, FIELD_QUESTIONS)); //mimic the Qcount
+	setDNSHeaderField(&resphead, FIELD_QUESTIONS, 0);
+			  //getDNSHeaderField(head, FIELD_QUESTIONS)); //mimic the Qcount
 	setDNSHeaderField(&resphead, FIELD_ANSWERS, 1);
 	setDNSHeaderField(&resphead, FIELD_ADDITIONAL, 0); //never have any additional sections
 	memcpy(int8ptr_postinc((int8_t **)&curr, sizeof(struct DNSHeader)),
@@ -205,7 +206,7 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	qname = createNAME(question->qname, &qname_size);
 	memcpy(int8ptr_postinc((int8_t **)&curr, qname_size), qname, qname_size); //copy the name
 	free(qname);
-	memcpy(int8ptr_postinc((int8_t **)&curr, 0x0A), answerbytes, 0x0A); //copy answer header
+	memcpy(int8ptr_postinc((int8_t **)&curr, ANSWER_LEN), answerbytes, ANSWER_LEN); //copy answer header
 	memcpy(int8ptr_postinc((int8_t **)&curr, 0x04), &answer->addr, 0x04); //copy addr
 	*size = curr - ptr; //set the size
 }
