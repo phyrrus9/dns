@@ -132,8 +132,6 @@ int8_t *readDNSQuestion(struct DNSQuestion *question, int8_t *ptr)
 	qname_ptr[qname_buf_size] = 0; //make it a NULL-terminated string
 	free(qname_buf); //remove data buffer
 	question->qname = qname_ptr; //set the string in the struct
-	question->original_size = ptr - orig_ptr;
-	memcpy(&question->original, orig_ptr, question->original_size);
 	//get type and class
 	memcpy(&question->qtype, int8ptr_postinc(&ptr, sizeof(uint16_t)),
 		sizeof(uint16_t)); //read the type
@@ -195,8 +193,6 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 		{ 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x58, 0x00, 0x04 };
 	uint16_t qname_size;
 	uint8_t *qname;
-	uint16_t id_tmp = getDNSHeaderField(head, FIELD_ID);
-	printf("\t[RESPOND] ID: %04x\n", id_tmp);
 	initDNSHeader(&resphead);
 	setDNSHeaderOption(&resphead, OPT_QR, 1);
 	setDNSHeaderOption(&resphead, OPT_AUTHORITIVE_ANSWER, 1);
@@ -204,10 +200,9 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	setDNSHeaderOption(&resphead, OPT_RECURSION_AVAILABLE, 1);
 	setDNSHeaderOption(&resphead, OPT_REQUEST_RECURSION,
 			   getDNSHeaderOption(head, OPT_REQUEST_RECURSION));
-	setDNSHeaderField(&resphead, FIELD_ID, id_tmp);
-			 // getDNSHeaderField(head, FIELD_ID)); //mimic the ID
+	setDNSHeaderField(&resphead, FIELD_ID,
+			  getDNSHeaderField(head, FIELD_ID)); //mimic the ID
 	setDNSHeaderField(&resphead, FIELD_QUESTIONS, 1); //reply with the question
-			  //getDNSHeaderField(head, FIELD_QUESTIONS)); //mimic the Qcount
 	setDNSHeaderField(&resphead, FIELD_ANSWERS, 1);
 	setDNSHeaderField(&resphead, FIELD_ADDITIONAL, 0); //never have any additional sections
 	memcpy(int8ptr_postinc((int8_t **)&curr, sizeof(struct DNSHeader)),
@@ -218,15 +213,12 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	*curr++ = 0x00; //NULL terminator record for NAME
 	*curr++ = 0x00; *curr++ = 0x01; //type=1 (A)
 	*curr++ = 0x00; *curr++ = 0x01; //class=1 (IN)
-	//free(qname);
 	/****answer section****/
-	//qname = createNAME(question->qname, &qname_size);
 	memcpy(int8ptr_postinc((int8_t **)&curr, qname_size), qname, qname_size); //copy the name
 	free(qname);
 	memcpy(int8ptr_postinc((int8_t **)&curr, ANSWER_LEN), answerbytes, ANSWER_LEN); //copy answer header
 	memcpy(int8ptr_postinc((int8_t **)&curr, 0x04), &answer->addr, 0x04); //copy addr
 	*size = curr - ptr; //set the size
-	printf("\t[RESPOND] ID_SENT: %04x\n", resphead.id);
 }
 
 char *resolveHost(char *hostname)

@@ -47,8 +47,6 @@ struct DNSQuestion
 	int8_t *qname;
 	uint16_t qtype;
 	uint16_t qclass;
-	uint8_t *original;
-	uint16_t original_size;
 };
 struct DNSAnswer
 {

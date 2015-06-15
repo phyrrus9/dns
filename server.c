@@ -8,6 +8,8 @@
 
 #define BUFFER_LEN 512
 
+#define DEBUG 0
+
 struct dnsServer
 {
 	uint16_t 		port;
@@ -23,6 +25,27 @@ int die(const char *msg, int code)
 	return code;
 }
 
+int passthrough(struct dnsServer *srv, int len)
+{
+	int sockfd, recvlen;
+	struct sockaddr_in serv;
+	memset(&serv, 0, sizeof(serv));
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	serv.sin_family = AF_INET;
+	serv.sin_addr.s_addr=inet_addr("8.8.8.8");
+	serv.sin_port=htons(53);
+	sendto(	sockfd, srv->buffer, len, 0,
+		(struct sockaddr *)&serv, sizeof(serv));
+	recvlen = recvfrom(sockfd, srv->buffer, BUFFER_LEN, 0, NULL, NULL);
+	close(sockfd);
+	sendto(	srv->sock, srv->buffer, recvlen, 0,
+		(struct sockaddr *)&srv->client, sizeof(srv->client));
+#if DEBUG == 1
+	printf("Packet passthrough success\n");
+#endif
+	return 0;
+}
+
 int handleRequest(struct dnsServer *srv, int len)
 {
 	struct DNSHeader head;
@@ -33,20 +56,18 @@ int handleRequest(struct dnsServer *srv, int len)
 	uint16_t size;
 	ptr = readDNSHeader(&head, ptr);
 	ptr = readDNSQuestion(&question, ptr);
-	printf("Received packet from %s:%d\tID: %04x",
-		inet_ntoa(srv->client.sin_addr), ntohs(srv->client.sin_port), head.id);
-	if (question.qtype != 1 || question.qclass != 1) //handle only A requests (with IN class)
+	if ((question.qtype != 1 || question.qclass != 1) ||
+	    ((addr = resolveHost(question.qname)) == NULL)) //call passthrough
 	{
-		return -1; //call passthrough
-	}
-	else if ((addr = resolveHost(question.qname)) == NULL) //call passthrough
-	{
-//		fprintf(stderr, "RESOLVE: %s\n", question.qname);
-//		return die("\tCOULD NOT RESOLVE", -1);
+		passthrough(srv, len);
 	}
 	else
 	{
+#if DEBUG == 1
+		printf("Received packet from %s:%d\tID: %04x\n",
+			inet_ntoa(srv->client.sin_addr), ntohs(srv->client.sin_port), head.id);
 		printf("NAME TO RESOLVE: %s\t%s\n", question.qname, addr);
+#endif
 		answer = createDNSAnswer(&question, addr);
 		createDNSResponse(&head, &question, &answer, (void **)&buf, &size);
 		sendto(srv->sock, buf, size, 0, (struct sockaddr*)&srv->client, sizeof(srv->client));
