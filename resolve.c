@@ -71,15 +71,17 @@ void Arecord_remove(FILE *fp, char *hostname)
 	fseek(fp, oldpos, SEEK_SET);
 }
 
-struct Arecord *resolve(char *hostname)
+struct Arecord *resolve(char *opt, AType by)
 {
 	struct Arecord *ret = NULL;
 	FILE *fp;
+	char *cmp;
 	if ((fp = fopen("A.txt", "rb")) == NULL)
 		return NULL;
 	while ((ret = Arecord_read(fp)) != NULL)
 	{
-		if (strcmp(hostname, ret->hostname) == 0)
+		cmp = by == A_BYHOST ? ret->hostname : ret->addr;
+		if (strcmp(opt, cmp) == 0)
 		{
 			fclose(fp);
 			return ret;

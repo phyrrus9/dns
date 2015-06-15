@@ -10,6 +10,18 @@
 
 #define DEBUG 0
 
+#define TYPE_A 		0x0001
+#define TYPE_NS		0x0002
+#define TYPE_CNAME	0x0005
+#define TYPE_SOA	0x0006
+#define TYPE_WKS	0x000B
+#define TYPE_PTR	0x000C
+#define TYPE_MX		0x000F
+#define TYPE_SRV	0x0021
+#define TYPE_A6		0x0026
+
+#define CLASS_IN	0x0001
+
 struct dnsServer
 {
 	uint16_t 		port;
@@ -54,10 +66,15 @@ int handleRequest(struct dnsServer *srv, int len)
 	int8_t *ptr = srv->buffer;
 	char *addr, *buf = NULL;
 	uint16_t size;
+	uint8_t found = 0;
 	ptr = readDNSHeader(&head, ptr);
 	ptr = readDNSQuestion(&question, ptr);
-	if ((question.qtype != 1 || question.qclass != 1) ||
-	    ((addr = resolveHost(question.qname)) == NULL)) //call passthrough
+	if (question.qtype == TYPE_A)
+		addr = resolveHost(question.qname);
+	else if (question.qtype = TYPE_PTR)
+		addr = resolveAddress(question.qname);
+	if ((question.qtype != TYPE_A && question.qtype != TYPE_PTR || question.qclass != CLASS_IN) ||
+	    addr == NULL)
 	{
 		passthrough(srv, len);
 	}

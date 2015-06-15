@@ -65,5 +65,6 @@ struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr);
 void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, struct DNSAnswer *answer,
 			void **buf, uint16_t *size);
 char *resolveHost(char *hostname);
+char *resolveAddress(char *addr);
 
 #endif

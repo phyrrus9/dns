@@ -223,10 +223,39 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 
 char *resolveHost(char *hostname)
 {
-	struct Arecord *rec = resolve(hostname);
+	struct Arecord *rec = resolve(hostname, A_BYHOST);
 	char *ret;
 	if (rec == NULL) return NULL;
 	ret = strdup(rec->addr);
 	free(rec);
+	return ret;
+}
+
+char *extract_addr(char *str)
+{
+	unsigned int len = strlen(str), i, j;
+	char *ret, *tmp;
+	int nums[4];
+	if (sscanf(str, "%d.%d.%d.%d.in-addr.arpa",
+	    &nums[0], &nums[1], &nums[2], &nums[3]) != 4)
+		return NULL;
+	tmp = malloc(len);
+	sprintf(tmp, "%d.%d.%d.%d", nums[0], nums[1], nums[2], nums[3]);
+	ret = malloc(strlen(tmp));
+	strcpy(ret, tmp);
+	free(tmp);
+	return ret;
+}
+
+char *resolveAddress(char *addr)
+{
+	struct Arecord *rec = NULL;
+	char *ret, *rev = extract_addr(addr);
+	if (rev == NULL) return NULL;
+	rec = resolve(rev, A_BYADDR);
+	if (rec == NULL) return NULL;
+	ret = strdup(rec->hostname);
+	free(rec);
+	free(rev);
 	return ret;
 }
