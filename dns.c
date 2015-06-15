@@ -188,9 +188,9 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 		*buf = malloc(0xFF); //allocate it
 	struct DNSHeader resphead;
 	char *ptr = (char *)*buf, *curr = ptr;
-#define ANSWER_LEN 0x09
+#define ANSWER_LEN 0x0B
 	char answerbytes[ANSWER_LEN] =
-		{ 0x00, 0x00, 0x01, 0x00, 0x01, 0xC0, 0x0C, 0x00, 0x04 };
+		{ 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x58, 0x00, 0x04 };
 	uint16_t qname_size;
 	uint8_t *qname;
 	initDNSHeader(&resphead);
