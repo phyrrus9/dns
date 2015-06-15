@@ -204,13 +204,21 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 			   getDNSHeaderOption(head, OPT_REQUEST_RECURSION));
 	setDNSHeaderField(&resphead, FIELD_ID,
 			  getDNSHeaderField(head, FIELD_ID)); //mimic the ID
-	setDNSHeaderField(&resphead, FIELD_QUESTIONS, 0);
+	setDNSHeaderField(&resphead, FIELD_QUESTIONS, 1); //reply with the question
 			  //getDNSHeaderField(head, FIELD_QUESTIONS)); //mimic the Qcount
 	setDNSHeaderField(&resphead, FIELD_ANSWERS, 1);
 	setDNSHeaderField(&resphead, FIELD_ADDITIONAL, 0); //never have any additional sections
 	memcpy(int8ptr_postinc((int8_t **)&curr, sizeof(struct DNSHeader)),
 	       &resphead, sizeof(struct DNSHeader)); //copy the header in
+	/****question section****/
 	qname = createNAME(question->qname, &qname_size);
+	memcpy(int8ptr_postinc((int8_t **)&curr, qname_size), qname, qname_size); //copy the name
+	*curr++ = 0x00; //NULL terminator record for NAME
+	*curr++ = 0x00; *curr++ = 0x01; //type=1 (A)
+	*curr++ = 0x00; *curr++ = 0x01; //class=1 (IN)
+	//free(qname);
+	/****answer section****/
+	//qname = createNAME(question->qname, &qname_size);
 	memcpy(int8ptr_postinc((int8_t **)&curr, qname_size), qname, qname_size); //copy the name
 	free(qname);
 	memcpy(int8ptr_postinc((int8_t **)&curr, ANSWER_LEN), answerbytes, ANSWER_LEN); //copy answer header
