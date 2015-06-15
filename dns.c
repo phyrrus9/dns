@@ -51,6 +51,7 @@ int setDNSHeaderOption(struct DNSHeader *head, enum DNSHeaderOption opt, uint8_t
 		case OPT_RECURSION_AVAILABLE:	return head->ra = val;
 		case OPT_ZBIT:			return head->zf = val;
 		case OPT_RCODE:			return head->rc = val;
+		case OPT_AUTHENTICATED:		return head->ad = val;
 		default: 			return 0; //unknown option
 	}
 }
@@ -67,6 +68,7 @@ uint8_t getDNSHeaderOption(struct DNSHeader *head, enum DNSHeaderOption opt)
 		case OPT_RECURSION_AVAILABLE:	return head->ra;
 		case OPT_ZBIT:			return head->zf;
 		case OPT_RCODE:			return head->rc;
+		case OPT_AUTHENTICATED:		return head->ad;
 	}
 	return 0xFF; //unknown option
 }
@@ -195,6 +197,11 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	uint8_t *qname;
 	initDNSHeader(&resphead);
 	setDNSHeaderOption(&resphead, OPT_QR, 1);
+	setDNSHeaderOption(&resphead, OPT_AUTHORITIVE_ANSWER, 1);
+	setDNSHeaderOption(&resphead, OPT_AUTHENTICATED, 1);
+	setDNSHeaderOption(&resphead, OPT_RECURSION_AVAILABLE, 1);
+	setDNSHeaderOption(&resphead, OPT_REQUEST_RECURSION,
+			   getDNSHeaderOption(head, OPT_REQUEST_RECURSION));
 	setDNSHeaderField(&resphead, FIELD_ID,
 			  getDNSHeaderField(head, FIELD_ID)); //mimic the ID
 	setDNSHeaderField(&resphead, FIELD_QUESTIONS, 0);
