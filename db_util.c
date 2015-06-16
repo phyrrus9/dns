@@ -47,7 +47,7 @@ int main(int argc, char ** argv)
 		struct Arecord *rec;
 		for (i = 2; i < argc; i++)
 		{
-			rec = resolve(argv[i]);
+			rec = resolve(argv[i], A_BYHOST);
 			if (rec == NULL)
 				printf("%s\tUNKNOWN\n", argv[i]);
 			else

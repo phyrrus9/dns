@@ -50,8 +50,11 @@ struct DNSQuestion
 };
 struct DNSAnswer
 {
+	uint8_t isaddr; //1 if addr, 0 if name
 	uint8_t rcode :4;
 	uint32_t addr;
+	uint8_t *name;
+	uint16_t namesize;
 };
 int setDNSHeaderField(struct DNSHeader *head, enum DNSHeaderField field, uint16_t val);
 uint16_t getDNSHeaderField(struct DNSHeader *head, enum DNSHeaderField field);
@@ -61,9 +64,10 @@ void initDNSHeader(struct DNSHeader *head);
 int8_t *int8ptr_postinc(int8_t **ptr, uint32_t increment);
 int8_t *readDNSHeader(struct DNSHeader *head, int8_t *ptr);
 int8_t *readDNSQuestion(struct DNSQuestion *question, int8_t *ptr);
-struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr);
+struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr, uint8_t isaddr);
 void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, struct DNSAnswer *answer,
 			void **buf, uint16_t *size);
+uint8_t *createNAME(int8_t *addr, uint16_t *size);
 char *resolveHost(char *hostname);
 char *resolveAddress(char *addr);
 

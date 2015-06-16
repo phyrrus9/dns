@@ -85,7 +85,7 @@ int handleRequest(struct dnsServer *srv, int len)
 			inet_ntoa(srv->client.sin_addr), ntohs(srv->client.sin_port), head.id);
 		printf("NAME TO RESOLVE: %s\t%s\n", question.qname, addr);
 #endif
-		answer = createDNSAnswer(&question, addr);
+		answer = createDNSAnswer(&question, addr, question.qtype == TYPE_A);
 		createDNSResponse(&head, &question, &answer, (void **)&buf, &size);
 		sendto(srv->sock, buf, size, 0, (struct sockaddr*)&srv->client, sizeof(srv->client));
 	}

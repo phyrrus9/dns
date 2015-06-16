@@ -142,7 +142,7 @@ int8_t *readDNSQuestion(struct DNSQuestion *question, int8_t *ptr)
 	return ptr; //return pointer to end of question
 }
 
-struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr)
+struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr, uint8_t isaddr)
 {
 	struct DNSAnswer ret;
 	union { uint32_t address;  uint8_t bytes[4]; } combine;
@@ -151,12 +151,18 @@ struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr)
 		ret.rcode = 0x4; //not implemented type
 	else
 		ret.rcode = 0x0;
-	sscanf(addr, "%d.%d.%d.%d",
-		(int *)&combine.bytes[0],
-		(int *)&combine.bytes[1],
-		(int *)&combine.bytes[2],
-		(int *)&combine.bytes[3]);
-	ret.addr = combine.address;
+	ret.isaddr = isaddr;
+	if (addr)
+	{
+		sscanf(addr, "%d.%d.%d.%d",
+			(int *)&combine.bytes[0],
+			(int *)&combine.bytes[1],
+			(int *)&combine.bytes[2],
+			(int *)&combine.bytes[3]);
+		ret.addr = combine.address;
+	}
+	else
+		ret.name = createNAME((int8_t *)addr, &ret.namesize);
 	return ret;
 }
 
@@ -189,8 +195,9 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	struct DNSHeader resphead;
 	char *ptr = (char *)*buf, *curr = ptr;
 #define ANSWER_LEN 0x0B
-	char answerbytes[ANSWER_LEN] =
-		{ 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02, 0x58, 0x00, 0x04 };
+	uint8_t type = answer->isaddr ? 0x01 : 0x0C; //either A or PTR
+	uint8_t answerbytes[ANSWER_LEN] =
+		{ 0x00, 0x00, 0x01, 0x00, type, 0x00, 0x00, 0x02, 0x58, 0x00, 0x04 };
 	uint16_t qname_size;
 	uint8_t *qname;
 	initDNSHeader(&resphead);
@@ -239,11 +246,8 @@ char *extract_addr(char *str)
 	if (sscanf(str, "%d.%d.%d.%d.in-addr.arpa",
 	    &nums[0], &nums[1], &nums[2], &nums[3]) != 4)
 		return NULL;
-	tmp = malloc(len);
-	sprintf(tmp, "%d.%d.%d.%d", nums[0], nums[1], nums[2], nums[3]);
-	ret = malloc(strlen(tmp));
-	strcpy(ret, tmp);
-	free(tmp);
+	ret = malloc(18);
+	sprintf(ret, "%d.%d.%d.%d", nums[0], nums[1], nums[2], nums[3]);
 	return ret;
 }
 
