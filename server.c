@@ -73,6 +73,11 @@ int handleRequest(struct dnsServer *srv, int len)
 		addr = resolveHost(question.qname);
 	else if (question.qtype = TYPE_PTR)
 		addr = resolveAddress(question.qname);
+#if DEBUG == 1
+		printf("Received packet from %s:%d\tID: %04x\n",
+			inet_ntoa(srv->client.sin_addr), ntohs(srv->client.sin_port), head.id);
+		printf("NAME TO RESOLVE: %s\t%s\n", question.qname, addr);
+#endif
 	if ((question.qtype != TYPE_A && question.qtype != TYPE_PTR || question.qclass != CLASS_IN) ||
 	    addr == NULL)
 	{
@@ -80,11 +85,6 @@ int handleRequest(struct dnsServer *srv, int len)
 	}
 	else
 	{
-#if DEBUG == 1
-		printf("Received packet from %s:%d\tID: %04x\n",
-			inet_ntoa(srv->client.sin_addr), ntohs(srv->client.sin_port), head.id);
-		printf("NAME TO RESOLVE: %s\t%s\n", question.qname, addr);
-#endif
 		answer = createDNSAnswer(&question, addr, question.qtype == TYPE_A);
 		createDNSResponse(&head, &question, &answer, (void **)&buf, &size);
 		sendto(srv->sock, buf, size, 0, (struct sockaddr*)&srv->client, sizeof(srv->client));

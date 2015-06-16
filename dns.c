@@ -152,7 +152,7 @@ struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr, uint8
 	else
 		ret.rcode = 0x0;
 	ret.isaddr = isaddr;
-	if (addr)
+	if (isaddr)
 	{
 		sscanf(addr, "%d.%d.%d.%d",
 			(int *)&combine.bytes[0],
@@ -179,7 +179,7 @@ uint8_t *createNAME(int8_t *host, uint16_t *size)
 		pch = strtok(NULL, ".");
 	}
 	*ptr = 0;
-	*size = ptr - buf;
+	*size = ptr - buf + 1;
 	ret = malloc(*size);
 	memcpy(ret, buf, *size);
 	free(buf);
@@ -194,12 +194,14 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 		*buf = malloc(0xFF); //allocate it
 	struct DNSHeader resphead;
 	char *ptr = (char *)*buf, *curr = ptr;
-#define ANSWER_LEN 0x0B
+#define ANSWER_LEN 0x08
 	uint8_t type = answer->isaddr ? 0x01 : 0x0C; //either A or PTR
 	uint8_t answerbytes[ANSWER_LEN] =
-		{ 0x00, 0x00, 0x01, 0x00, type, 0x00, 0x00, 0x02, 0x58, 0x00, 0x04 };
+		{ 0x00, type, 0x00, 0x01, 0x00, 0x00, 0x02, 0x58 };
+	uint16_t length = answer->isaddr ? 0x0004 : answer->namesize;
 	uint16_t qname_size;
 	uint8_t *qname;
+	length = htons(length); //convert length endian
 	initDNSHeader(&resphead);
 	setDNSHeaderOption(&resphead, OPT_QR, 1);
 	setDNSHeaderOption(&resphead, OPT_AUTHORITIVE_ANSWER, 1);
@@ -217,14 +219,17 @@ void createDNSResponse(struct DNSHeader *head, struct DNSQuestion *question, str
 	/****question section****/
 	qname = createNAME(question->qname, &qname_size);
 	memcpy(int8ptr_postinc((int8_t **)&curr, qname_size), qname, qname_size); //copy the name
-	*curr++ = 0x00; //NULL terminator record for NAME
-	*curr++ = 0x00; *curr++ = 0x01; //type=1 (A)
+	*curr++ = 0x00; *curr++ = type; //type
 	*curr++ = 0x00; *curr++ = 0x01; //class=1 (IN)
 	/****answer section****/
 	memcpy(int8ptr_postinc((int8_t **)&curr, qname_size), qname, qname_size); //copy the name
 	free(qname);
 	memcpy(int8ptr_postinc((int8_t **)&curr, ANSWER_LEN), answerbytes, ANSWER_LEN); //copy answer header
-	memcpy(int8ptr_postinc((int8_t **)&curr, 0x04), &answer->addr, 0x04); //copy addr
+	memcpy(int8ptr_postinc((int8_t **)&curr, 0x02), &length, 0x02); //copy RLENGTH
+	if (answer->isaddr)
+		memcpy(int8ptr_postinc((int8_t **)&curr, 0x04), &answer->addr, 0x04); //copy addr
+	else
+		memcpy(int8ptr_postinc((int8_t **)&curr, answer->namesize), answer->name, answer->namesize); //copy name
 	*size = curr - ptr; //set the size
 }
 
@@ -244,7 +249,7 @@ char *extract_addr(char *str)
 	char *ret, *tmp;
 	int nums[4];
 	if (sscanf(str, "%d.%d.%d.%d.in-addr.arpa",
-	    &nums[0], &nums[1], &nums[2], &nums[3]) != 4)
+	    &nums[3], &nums[2], &nums[1], &nums[0]) != 4)
 		return NULL;
 	ret = malloc(18);
 	sprintf(ret, "%d.%d.%d.%d", nums[0], nums[1], nums[2], nums[3]);
