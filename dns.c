@@ -155,10 +155,10 @@ struct DNSAnswer createDNSAnswer(struct DNSQuestion *question, char *addr, uint8
 	if (isaddr)
 	{
 		sscanf(addr, "%d.%d.%d.%d",
-			(int *)&combine.bytes[0],
-			(int *)&combine.bytes[1],
-			(int *)&combine.bytes[2],
-			(int *)&combine.bytes[3]);
+			(uint8_t *)&combine.bytes[0],
+			(uint8_t *)&combine.bytes[1],
+			(uint8_t *)&combine.bytes[2],
+			(uint8_t *)&combine.bytes[3]);
 		ret.addr = combine.address;
 	}
 	else
